@@ -21,3 +21,6 @@
    - 修改失败概率上限：`self.max_fail_prob = 0.95`
    - 修改游戏触发次数限制：`self.trigger_limit = 3`
 4. 如遇问题，可在 [GitHub Issues](https://github.com/oyxning/astrbot_plugin_sakisaki/issues) 提交错误报告。
+
+### 提示
+一个群里有多个bot的话最好只有一个bot安装本插件，当消息发送过快会导致时间限制短暂失效。
