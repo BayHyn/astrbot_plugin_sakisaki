@@ -1,0 +1,24 @@
+title: 香草小祥小游戏配置
+desc: 调整小游戏的概率与功能开关
+schema:
+  type: object
+  properties:
+    success_prob:
+      type: number
+      title: 成功概率（0~1）
+      default: 0.25
+      minimum: 0.01
+      maximum: 1.0
+      description: 触发“与小祥玩耍成功”的概率
+    max_fail_prob:
+      type: number
+      title: 最大失败概率展示（0~1）
+      default: 0.95
+      minimum: 0.01
+      maximum: 1.0
+      description: 用于失败信息中的随机展示概率上限
+    enable_rank_command:
+      type: boolean
+      title: 启用排行榜指令
+      default: true
+      description: 是否启用 /saki排行 命令显示玩家排行
