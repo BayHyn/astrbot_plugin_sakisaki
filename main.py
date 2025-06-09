@@ -33,7 +33,7 @@ def save_data(data):
     "astrbot_plugin_sakisaki",
     "LumineStory",
     "香草小祥小游戏插件",
-    "1.0.1",
+    "1.0.0",
     "https://github.com/oyxning/astrbot_plugin_sakisaki"
 )
 class SakiSaki(Star):
