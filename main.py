@@ -33,7 +33,7 @@ def save_data(data):
     "astrbot_plugin_sakisaki",
     "LumineStory",
     "香草小祥小游戏插件",
-    "1.0.0",
+    "1.0.1",
     "https://github.com/oyxning/astrbot_plugin_sakisaki"
 )
 class SakiSaki(Star):
@@ -67,7 +67,7 @@ class SakiSaki(Star):
                     if elapsed_time < GAME_COOLDOWN_TIME:
                         if trigger_count >= self.game_trigger_limit:
                             yield event.plain_result(
-                                f"⏳ 你的触发次数已达上限，请等待 {round(GAME_COOLDOWN_TIME - elapsed_time)} 秒后再尝试"
+                                f"⏳ 你的短时追击次数已达上限，请等待 {round(GAME_COOLDOWN_TIME - elapsed_time)} 秒后再尝试"
                             )
                             return
                         else:
@@ -89,12 +89,12 @@ class SakiSaki(Star):
                     save_data(data)
 
                     yield event.plain_result(
-                        f"🎉 恭喜，你是本群第 {data['play_count']} 位三角初音！你已经与香草小祥玩耍了 {data['players'][sender_id]['count']} 次！"
+                        f"🎉 你是追上本祥的第 {data['play_count']} 位三角初音！根据统计你香草小祥 {data['players'][sender_id]['count']} 次！"
                     )
                 else:
                     fail_prob = round(random.uniform(self.success_prob, self.max_fail_prob) * 100, 2)
                     yield event.plain_result(
-                        f"😢 你在概率为 {fail_prob}% 时与小祥失之交臂，正在重新概率运算……"
+                        f"😢 你在概率为 {fail_prob}% 时让小祥逃掉了，正在重新追击……"
                     )
 
     @filter.command("saki排行")
