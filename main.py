@@ -1,14 +1,22 @@
 import os
 import json
 import random
+import time  # 引入时间模块
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 from astrbot.api.message_components import Plain
 from astrbot.api import logger
 
-# 数据文件保存在 AstrBot 主目录的 /data 路径
 DATA_PATH = os.path.join("data", "sakisaki_data.json")
 TRIGGER_KEYWORDS = {"saki", "小祥"}
+
+# 新增计时器配置
+USER_COOLDOWN = {}  # 存储用户冷却信息
+RANK_COOLDOWN = {}  # 存储排行榜冷却信息
+RANK_QUERIES = {}   # 存储用户排行榜查询次数
+
+GAME_COOLDOWN_TIME = 60   # 游戏冷却时间（秒）
+RANK_COOLDOWN_TIME = 60   # 排行榜冷却时间（秒）
 
 def load_data():
     if not os.path.exists(DATA_PATH):
@@ -31,41 +39,92 @@ def save_data(data):
 class SakiSaki(Star):
     def __init__(self, context: Context):
         super().__init__(context)
-        config = context.get_config()  # ✅ 正确方式读取插件配置
-        self.success_prob = config.get("success_prob", 0.25)
-        self.max_fail_prob = config.get("max_fail_prob", 0.95)
-        self.enable_rank_command = config.get("enable_rank_command", True)
+        # 用户可自行修改以下参数
+        self.success_prob = 0.25  # 成功概率，默认25%
+        self.max_fail_prob = 0.95  # 失败概率上限，默认95%
+        self.game_trigger_limit = 3  # 游戏触发次数限制，默认3次
+        self.rank_query_limit = 1   # 排行榜显示次数，默认1次
 
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def on_message(self, event: AstrMessageEvent):
-        text = event.message_str.lower()  # ✅ 访问 event 的 message_str
-        if not any(keyword in text for keyword in TRIGGER_KEYWORDS):
-            return
+        text = event.message_str.lower()
+        # 只有在识别到"saki"或"小祥"时才触发事件
+        if "saki" in text or "小祥" in text:
+            if "排行" in text:
+                # 如果识别到"排行"，则调用排行榜命令
+                async for msg in self.show_rank(event):
+                    yield msg
+            else:
+                # 否则，触发随机事件
+                sender_id = event.get_sender_id()
+                sender_name = event.get_sender_name()
 
-        sender_id = event.get_sender_id()
-        sender_name = event.get_sender_name()
-        data = load_data()
+                # 检查用户是否在游戏冷却中
+                current_time = time.time()
+                if sender_id in USER_COOLDOWN:
+                    last_trigger_time, trigger_count = USER_COOLDOWN[sender_id]
+                    elapsed_time = current_time - last_trigger_time
+                    if elapsed_time < GAME_COOLDOWN_TIME:
+                        if trigger_count >= self.game_trigger_limit:
+                            yield event.plain_result(
+                                f"⏳ 你的触发次数已达上限，请等待 {round(GAME_COOLDOWN_TIME - elapsed_time)} 秒后再尝试"
+                            )
+                            return
+                        else:
+                            # 更新触发次数
+                            USER_COOLDOWN[sender_id] = (last_trigger_time, trigger_count + 1)
+                    else:
+                        # 冷却时间已过，重置计数
+                        USER_COOLDOWN[sender_id] = (current_time, 1)
+                else:
+                    # 首次触发
+                    USER_COOLDOWN[sender_id] = (current_time, 1)
 
-        if random.random() < self.success_prob:
-            data["play_count"] += 1
-            data["players"].setdefault(sender_id, {"name": sender_name, "count": 0})
-            data["players"][sender_id]["count"] += 1
-            save_data(data)
+                data = load_data()
 
-            yield event.plain_result(
-                f"🎉 恭喜，你是本群第 {data['play_count']} 位三角初音！你已经与香草小祥玩耍了 {data['players'][sender_id]['count']} 次！"
-            )
-        else:
-            fail_prob = round(random.uniform(self.success_prob, self.max_fail_prob) * 100, 2)
-            yield event.plain_result(
-                f"😢 你在概率为 {fail_prob}% 时与小祥失之交臂，正在重新概率运算……"
-            )
+                if random.random() < self.success_prob:
+                    data["play_count"] += 1
+                    data["players"].setdefault(sender_id, {"name": sender_name, "count": 0})
+                    data["players"][sender_id]["count"] += 1
+                    save_data(data)
+
+                    yield event.plain_result(
+                        f"🎉 恭喜，你是本群第 {data['play_count']} 位三角初音！你已经与香草小祥玩耍了 {data['players'][sender_id]['count']} 次！"
+                    )
+                else:
+                    fail_prob = round(random.uniform(self.success_prob, self.max_fail_prob) * 100, 2)
+                    yield event.plain_result(
+                        f"😢 你在概率为 {fail_prob}% 时与小祥失之交臂，正在重新概率运算……"
+                    )
 
     @filter.command("saki排行")
     async def show_rank(self, event: AstrMessageEvent):
-        if not self.enable_rank_command:
-            yield event.plain_result("该群未启用排行榜功能。")
-            return
+        sender_id = event.get_sender_id()
+        current_time = time.time()
+
+        # 检查用户是否在排行榜冷却中，并统计查询次数
+        if sender_id in RANK_COOLDOWN:
+            last_rank_time = RANK_COOLDOWN[sender_id]
+            rank_query_count = RANK_QUERIES.get(sender_id, 0)
+            elapsed_time = current_time - last_rank_time
+
+            if elapsed_time < RANK_COOLDOWN_TIME:
+                if rank_query_count >= self.rank_query_limit:
+                    yield event.plain_result(
+                        f"⏳ 你60s内已经查询过排行榜，请稍后再来查询吧！"
+                    )
+                    return
+                else:
+                    # 更新查询次数
+                    RANK_QUERIES[sender_id] = rank_query_count + 1
+            else:
+                # 更新排行榜查询时间和查询次数
+                RANK_COOLDOWN[sender_id] = current_time
+                RANK_QUERIES[sender_id] = 1
+        else:
+            # 记录排行榜查询时间和初始化查询次数
+            RANK_COOLDOWN[sender_id] = current_time
+            RANK_QUERIES[sender_id] = 1
 
         data = load_data()
         players = data.get("players", {})
