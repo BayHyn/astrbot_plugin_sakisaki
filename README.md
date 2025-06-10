@@ -57,10 +57,10 @@ data/sjp.jpg
 ## 😂 开发备注
 
 能写出这个，家里得请高人了。  
-1. 将插件目录克隆到 `AstrBot/data/plugins/` 下。
-2. 确保 `main.py` 文件存在于插件目录中。
-3. 用户可以在 `main.py` 文件中直接修改概率和其他参数：
+
+1. 用户可以在 `main.py` 文件中直接修改概率和其他参数：
    - 修改成功概率：`self.success_prob = 0.25`
    - 修改失败概率上限：`self.max_fail_prob = 0.95`
    - 修改游戏触发次数限制：`self.trigger_limit = 3`
-4. 如遇问题，可在 [GitHub Issues](https://github.com/oyxning/astrbot_plugin_sakisaki/issues) 提交错误报告。
+   - 
+2. 如遇问题，可在 [GitHub Issues](https://github.com/oyxning/astrbot_plugin_sakisaki/issues) 提交错误报告。
