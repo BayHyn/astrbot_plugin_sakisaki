@@ -4,7 +4,7 @@ import random
 import time  # 引入时间模块
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
-from astrbot.api.message_components import Plain
+from astrbot.api.message_components import Plain, Image  # 导入 Image 组件
 from astrbot.api import logger
 
 DATA_PATH = os.path.join("data", "sakisaki_data.json")
@@ -33,7 +33,7 @@ def save_data(data):
     "astrbot_plugin_sakisaki",
     "LumineStory",
     "香草小祥小游戏插件",
-    "1.1.0",
+    "1.2.0",
     "https://github.com/oyxning/astrbot_plugin_sakisaki"
 )
 class SakiSaki(Star):
@@ -91,6 +91,8 @@ class SakiSaki(Star):
                     yield event.plain_result(
                         f"🎉 你是追上本祥的第 {data['play_count']} 位三角初音！根据统计你香草小祥 {data['players'][sender_id]['count']} 次！"
                     )
+                    # 发送图片
+                    yield event.image_result("sjp.jpg")  # 图片名称为 sjp.jpg，位于同一目录下
                 else:
                     fail_prob = round(random.uniform(self.success_prob, self.max_fail_prob) * 100, 2)
                     yield event.plain_result(
