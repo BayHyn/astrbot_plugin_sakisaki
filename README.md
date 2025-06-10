@@ -1,6 +1,6 @@
 # astrbot_plugin_sakisaki
 
-🎮 一个为 AstrBot 打造的趣味小游戏插件 —— 香草小祥追击！
+🎮 一个为 ~~三角初音~~ AstrBot 打造的趣味小游戏插件 —— 香草小祥追击！
 
 ---
 
