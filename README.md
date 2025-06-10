@@ -62,5 +62,5 @@ data/sjp.jpg
    - 修改成功概率：`self.success_prob = 0.25`
    - 修改失败概率上限：`self.max_fail_prob = 0.95`
    - 修改游戏触发次数限制：`self.trigger_limit = 3`
-   - 
+   
 2. 如遇问题，可在 [GitHub Issues](https://github.com/oyxning/astrbot_plugin_sakisaki/issues) 提交错误报告。
