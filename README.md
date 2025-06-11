@@ -64,3 +64,11 @@ data/sjp.jpg
    - 修改游戏触发次数限制：`self.trigger_limit = 3`
    
 2. 如遇问题，可在 [GitHub Issues](https://github.com/oyxning/astrbot_plugin_sakisaki/issues) 提交错误报告。
+
+3. 插件会在每次触发时自动检查是否需要下载最新的图片。
+
+4. 只建议一个群内只有一个Bot实例运行此插件，以避免循环触发。
+
+## 📜 许可证
+
+本插件遵循 [MIT 许可证](https://opensource.org/license/mit/)，欢迎自由使用和修改。
