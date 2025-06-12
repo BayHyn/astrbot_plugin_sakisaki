@@ -22,10 +22,6 @@ RANK_QUERIES = {}
 GAME_COOLDOWN_TIME = 60
 RANK_COOLDOWN_TIME = 60
 
-ADMIN_LIST = set()
-
-# 删除管理员相关的加载和保存函数
-
 # 加载数据
 def load_data():
     if not os.path.exists(DATA_PATH):
@@ -159,21 +155,6 @@ class SakiSaki(Star):
         for i, (uid, info) in enumerate(ranking[:10], 1):
             msg += f"{i}. {info['name']} - {info['count']} 次\n"
         yield event.plain_result(msg)
-
-    @filter.command("saki清除排行")
-    async def clear_rank(self, event: AstrMessageEvent):
-        # 检查是否为管理员
-        if not event.is_admin():
-            yield event.plain_result("⚠️ 只有管理员可以清除排行榜！")
-            return
-
-        # 清空数据
-        data = load_data()
-        data["play_count"] = 0
-        data["players"] = {}
-        save_data(data)
-
-        yield event.plain_result("✅ 排行榜已成功清除！")
 
     async def terminate(self):
         logger.info("插件 astrbot_plugin_sakisaki 被终止。")
