@@ -169,6 +169,7 @@ class SakiSaki(Star):
 
         # 清空数据
         data = load_data()
+        data["play_count"] = 0
         data["players"] = {}
         save_data(data)
 
