@@ -71,53 +71,61 @@ class SakiSaki(Star):
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def on_message(self, event: AstrMessageEvent):
         text = event.message_str.lower()
+
+        # 优先处理清除排行命令，避免触发排行关键词
+        if "saki清除排行" in text:
+            async for msg in self.clear_rank(event):
+                yield msg
+            return
+
         if "saki" in text or "小祥" in text:
             if "排行" in text:
                 async for msg in self.show_rank(event):
                     yield msg
-            else:
-                sender_id = event.get_sender_id()
-                sender_name = event.get_sender_name()
-                current_time = time.time()
+                return  # 确保只发送一次排行数据
 
-                if sender_id in USER_COOLDOWN:
-                    last_trigger_time, trigger_count = USER_COOLDOWN[sender_id]
-                    elapsed_time = current_time - last_trigger_time
-                    if elapsed_time < GAME_COOLDOWN_TIME:
-                        if trigger_count >= self.game_trigger_limit:
-                            yield event.plain_result(
-                                f"⏳ 你的短时追击次数已达上限，请等待 {round(GAME_COOLDOWN_TIME - elapsed_time)} 秒后再尝试"
-                            )
-                            return
-                        else:
-                            USER_COOLDOWN[sender_id] = (last_trigger_time, trigger_count + 1)
+            sender_id = event.get_sender_id()
+            sender_name = event.get_sender_name()
+            current_time = time.time()
+
+            if sender_id in USER_COOLDOWN:
+                last_trigger_time, trigger_count = USER_COOLDOWN[sender_id]
+                elapsed_time = current_time - last_trigger_time
+                if elapsed_time < GAME_COOLDOWN_TIME:
+                    if trigger_count >= self.game_trigger_limit:
+                        yield event.plain_result(
+                            f"⏳ 你的短时追击次数已达上限，请等待 {round(GAME_COOLDOWN_TIME - elapsed_time)} 秒后再尝试"
+                        )
+                        return
                     else:
-                        USER_COOLDOWN[sender_id] = (current_time, 1)
+                        USER_COOLDOWN[sender_id] = (last_trigger_time, trigger_count + 1)
                 else:
                     USER_COOLDOWN[sender_id] = (current_time, 1)
+            else:
+                USER_COOLDOWN[sender_id] = (current_time, 1)
 
-                data = load_data()
+            data = load_data()
 
-                if random.random() < self.success_prob:
-                    data["play_count"] += 1
-                    data["players"].setdefault(sender_id, {"name": sender_name, "count": 0})
-                    data["players"][sender_id]["count"] += 1
-                    save_data(data)
+            if random.random() < self.success_prob:
+                data["play_count"] += 1
+                data["players"].setdefault(sender_id, {"name": sender_name, "count": 0})
+                data["players"][sender_id]["count"] += 1
+                save_data(data)
 
-                    yield event.plain_result(
-                        f"🎉 你是追上本祥的第 {data['play_count']} 位三角初音！根据统计你香草小祥 {data['players'][sender_id]['count']} 次！"
-                    )
+                yield event.plain_result(
+                    f"🎉 你是追上本祥的第 {data['play_count']} 位三角初音！根据统计你香草小祥 {data['players'][sender_id]['count']} 次！"
+                )
 
-                    # 发送图片
-                    if os.path.exists(IMAGE_DEST_PATH):
-                        yield event.image_result(os.path.abspath(IMAGE_DEST_PATH))
-                    else:
-                        yield event.plain_result("⚠️ 图片未找到，可能下载失败。")
+                # 发送图片
+                if os.path.exists(IMAGE_DEST_PATH):
+                    yield event.image_result(os.path.abspath(IMAGE_DEST_PATH))
                 else:
-                    fail_prob = round(random.uniform(self.success_prob, self.max_fail_prob) * 100, 2)
-                    yield event.plain_result(
-                        f"😢 你在概率为 {fail_prob}% 时让小祥逃掉了，正在重新追击……"
-                    )
+                    yield event.plain_result("⚠️ 图片未找到，可能下载失败。")
+            else:
+                fail_prob = round(random.uniform(self.success_prob, self.max_fail_prob) * 100, 2)
+                yield event.plain_result(
+                    f"😢 你在概率为 {fail_prob}% 时让小祥逃掉了，正在重新追击……"
+                )
 
     @filter.command("saki排行")
     async def show_rank(self, event: AstrMessageEvent):
@@ -155,6 +163,21 @@ class SakiSaki(Star):
         for i, (uid, info) in enumerate(ranking[:10], 1):
             msg += f"{i}. {info['name']} - {info['count']} 次\n"
         yield event.plain_result(msg)
+
+    @filter.command("saki清除排行")
+    async def clear_rank(self, event: AstrMessageEvent):
+        # 检查是否为管理员
+        if not event.is_admin():
+            yield event.plain_result("⚠️ 只有管理员可以清除排行榜！")
+            return
+
+        # 清空数据
+        data = load_data()
+        data["play_count"] = 0
+        data["players"] = {}
+        save_data(data)
+
+        yield event.plain_result("✅ 排行榜已成功清除！")
 
     async def terminate(self):
         logger.info("插件 astrbot_plugin_sakisaki 被终止。")
