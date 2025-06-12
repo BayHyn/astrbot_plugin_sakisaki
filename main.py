@@ -22,6 +22,8 @@ RANK_QUERIES = {}
 GAME_COOLDOWN_TIME = 60
 RANK_COOLDOWN_TIME = 60
 
+ADMIN_LIST = set()
+
 def load_data():
     if not os.path.exists(DATA_PATH):
         return {"play_count": 0, "players": {}}
@@ -32,6 +34,19 @@ def save_data(data):
     os.makedirs(os.path.dirname(DATA_PATH), exist_ok=True)
     with open(DATA_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+def load_admins():
+    if os.path.exists("admins.json"):
+        with open("admins.json", "r", encoding="utf-8") as f:
+            return set(json.load(f))
+    return set()
+
+def save_admins():
+    with open("admins.json", "w", encoding="utf-8") as f:
+        json.dump(list(ADMIN_LIST), f, ensure_ascii=False, indent=2)
+
+# 加载管理员列表
+ADMIN_LIST.update(load_admins())
 
 async def download_image_if_needed():
     if not os.path.exists(IMAGE_DEST_PATH):
@@ -154,5 +169,57 @@ class SakiSaki(Star):
             msg += f"{i}. {info['name']} - {info['count']} 次\n"
         yield event.plain_result(msg)
 
+    @filter.command("saki清除排行")
+    async def clear_rank(self, event: AstrMessageEvent):
+        # 检查是否为管理员
+        if not event.is_admin():
+            yield event.plain_result("⚠️ 只有管理员可以清除排行榜！")
+            return
+
+        # 清空数据
+        data = load_data()
+        data["players"] = {}
+        save_data(data)
+
+        yield event.plain_result("✅ 排行榜已成功清除！")
+
+    @filter.command("saki设置管理员")
+    async def add_admin(self, event: AstrMessageEvent):
+        # 检查是否为当前管理员
+        if not event.is_admin():
+            yield event.plain_result("⚠️ 只有管理员可以设置新的管理员！")
+            return
+
+        # 获取目标用户ID
+        target_id = event.get_target_id()
+        if not target_id:
+            yield event.plain_result("⚠️ 请指定要设置为管理员的用户！")
+            return
+
+        ADMIN_LIST.add(target_id)
+        save_admins()
+        yield event.plain_result(f"✅ 用户 {target_id} 已被设置为管理员！")
+
+    @filter.command("saki移除管理员")
+    async def remove_admin(self, event: AstrMessageEvent):
+        # 检查是否为当前管理员
+        if not event.is_admin():
+            yield event.plain_result("⚠️ 只有管理员可以移除管理员！")
+            return
+
+        # 获取目标用户ID
+        target_id = event.get_target_id()
+        if not target_id:
+            yield event.plain_result("⚠️ 请指定要移除管理员的用户！")
+            return
+
+        if target_id in ADMIN_LIST:
+            ADMIN_LIST.remove(target_id)
+            save_admins()
+            yield event.plain_result(f"✅ 用户 {target_id} 已被移除管理员！")
+        else:
+            yield event.plain_result(f"⚠️ 用户 {target_id} 不是管理员！")
+
     async def terminate(self):
+        save_admins()
         logger.info("插件 astrbot_plugin_sakisaki 被终止。")
