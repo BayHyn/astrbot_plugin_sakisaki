@@ -54,7 +54,7 @@ async def download_image_if_needed():
     "astrbot_plugin_sakisaki",
     "LumineStory",
     "香草小祥小游戏插件",
-    "1.2.0",
+    "1.3.0",
     "https://github.com/oyxning/astrbot_plugin_sakisaki"
 )
 class SakiSaki(Star):
