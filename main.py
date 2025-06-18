@@ -53,6 +53,8 @@ async def download_image_if_needed():
         except Exception as e:
             logger.warning(f"下载图片出错: {e}")
 
+LAST_TRIGGER_TIME = 0  # 全局变量记录上次触发时间
+
 @register(
     "astrbot_plugin_sakisaki",
     "LumineStory",
@@ -73,6 +75,14 @@ class SakiSaki(Star):
 
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def on_message(self, event: AstrMessageEvent):
+        global LAST_TRIGGER_TIME
+        current_time = time.time()
+
+        # 检查是否在1秒内重复触发
+        if current_time - LAST_TRIGGER_TIME < 1:
+            return
+        LAST_TRIGGER_TIME = current_time
+
         text = event.message_str.lower()
 
         # 定义插件可能输出的消息模板
@@ -105,7 +115,6 @@ class SakiSaki(Star):
 
             sender_id = event.get_sender_id()
             sender_name = event.get_sender_name()
-            current_time = time.time()
 
             if sender_id in USER_COOLDOWN:
                 last_trigger_time, trigger_count = USER_COOLDOWN[sender_id]
