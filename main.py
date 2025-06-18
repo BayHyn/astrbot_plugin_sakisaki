@@ -22,6 +22,9 @@ RANK_QUERIES = {}
 GAME_COOLDOWN_TIME = 60
 RANK_COOLDOWN_TIME = 60
 
+# 假设机器人 ID 列表
+BOT_IDS = {"bot_1", "bot_2", "bot_3"}  # 替换为实际的机器人 ID
+
 # 加载数据
 def load_data():
     if not os.path.exists(DATA_PATH):
@@ -71,6 +74,22 @@ class SakiSaki(Star):
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def on_message(self, event: AstrMessageEvent):
         text = event.message_str.lower()
+
+        # 定义插件可能输出的消息模板
+        plugin_responses = [
+            "🎉 你是追上本祥的第",
+            "😢 你在概率为",
+            "🏆 香草小祥排行榜：",
+            "✅ 排行榜已成功清除！",
+            "暂无玩家记录~",
+            "⚠️ 图片未找到，可能下载失败。",
+            "⏳ 你的短时追击次数已达上限，请等待",
+            "⏳ 你60s内已经查询过排行榜，请稍后再来查询吧！",
+        ]
+
+        # 检测消息是否与插件输出的文字相匹配，避免触发循环
+        if any(response in text for response in plugin_responses):
+            return
 
         # 优先处理清除排行命令，避免触发排行关键词
         if "saki清除排行" in text:
