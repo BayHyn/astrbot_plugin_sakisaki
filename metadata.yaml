@@ -1,5 +1,5 @@
 name: astrbot_plugin_sakisaki
 author: LumineStory
-desc: "一个有趣的香草小祥追击小游戏。支持关键词触发、排行榜查询和管理员控制功能，所有参数均可在后台配置。"
-version: "1.0.0"
+desc: 香草小祥小游戏插件，基于关键词触发和概率机制
+version: "1.4.0"
 repo: https://github.com/oyxning/astrbot_plugin_sakisaki
