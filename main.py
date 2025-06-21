@@ -13,7 +13,7 @@ from astrbot.api.star import Context, Star, register
     "sakisaki",
     "LumineStory",
     "香草小祥小游戏插件，重构优化版",
-    "1.5.0",
+    "1.0.0",
     "https://github.com/oyxning/astrbot_plugin_sakisaki"
 )
 class SakiSakiPlugin(Star):
