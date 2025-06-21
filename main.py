@@ -22,9 +22,6 @@ RANK_QUERIES = {}
 GAME_COOLDOWN_TIME = 60
 RANK_COOLDOWN_TIME = 60
 
-# 假设机器人 ID 列表
-BOT_IDS = {"bot_1", "bot_2", "bot_3"}  # 替换为实际的机器人 ID
-
 # 加载数据
 def load_data():
     if not os.path.exists(DATA_PATH):
@@ -59,7 +56,7 @@ LAST_TRIGGER_TIME = 0  # 全局变量记录上次触发时间
     "astrbot_plugin_sakisaki",
     "LumineStory",
     "香草小祥小游戏插件",
-    "1.3.0",
+    "1.4.0",
     "https://github.com/oyxning/astrbot_plugin_sakisaki"
 )
 class SakiSaki(Star):
