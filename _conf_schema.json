@@ -1,0 +1,38 @@
+{
+    "trigger_keywords": {
+        "type": "list",
+        "description": "游戏触发关键词",
+        "default": ["saki", "小祥"],
+        "hint": "当消息中包含这些关键词时，会触发游戏"
+    },
+    "success_rate": {
+        "type": "float",
+        "description": "追上小祥的基础概率",
+        "default": 0.3,
+        "hint": "取值范围在 0.0 到 1.0 之间"
+    },
+    "game_cooldown": {
+        "type": "int",
+        "description": "游戏冷却时间（秒）",
+        "default": 60,
+        "hint": "单个用户触发游戏后的冷却时间"
+    },
+    "rank_cooldown": {
+        "type": "int",
+        "description": "排行榜查询冷却时间（秒）",
+        "default": 60,
+        "hint": "单个用户查询排行榜的冷却时间"
+    },
+    "rank_query_limit": {
+        "type": "int",
+        "description": "排行榜查询次数限制",
+        "default": 3,
+        "hint": "在冷却时间内，用户可查询排行榜的最大次数"
+    },
+    "image_url": {
+        "type": "string",
+        "description": "游戏成功时发送的图片URL",
+        "default": "https://raw.githubusercontent.com/oyxning/astrbot_plugin_sakisaki/refs/heads/master/sjp.jpg",
+        "hint": "插件启动时会自动下载该图片"
+    }
+}
