@@ -7,10 +7,11 @@ import asyncio
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 from astrbot.api.message_components import Plain
-from astrbot.api import logger
+from astrbot.api import logger, AstrBotConfig
+from astrbot.api.star import StarTools
 
-DATA_PATH = os.path.join("data", "sakisaki_data.json")
-IMAGE_DEST_PATH = os.path.join("data", "sjp.jpg")
+DATA_PATH = StarTools.get_data_dir()
+IMAGE_DEST_PATH = os.path.join(DATA_PATH, "sjp.jpg")
 IMAGE_URL = "https://raw.githubusercontent.com/oyxning/astrbot_plugin_sakisaki/refs/heads/master/sjp.jpg"
 
 TRIGGER_KEYWORDS = {"saki", "小祥"}
@@ -52,6 +53,10 @@ async def download_image_if_needed():
 
 LAST_TRIGGER_TIME = 0  # 全局变量记录上次触发时间
 
+# 创建一个函数，控制参数在0-1之间
+def clamp(value, min_value=0, max_value=1):
+    return max(min(value, max_value), min_value)
+
 @register(
     "astrbot_plugin_sakisaki",
     "LumineStory",
@@ -60,12 +65,13 @@ LAST_TRIGGER_TIME = 0  # 全局变量记录上次触发时间
     "https://github.com/oyxning/astrbot_plugin_sakisaki"
 )
 class SakiSaki(Star):
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
-        self.success_prob = 0.25
-        self.max_fail_prob = 0.95
-        self.game_trigger_limit = 3
-        self.rank_query_limit = 1
+        self.config = config
+        self.success_prob = clamp(config.get("success_prob", 0.5), 0, 1)  # 确保成功概率在0-1之间
+        self.max_fail_prob = clamp(config.get("max_fail_prob", 0.95), 0, 1)
+        self.game_trigger_limit = config.get("game_trigger_limit", 3)
+        self.rank_query_limit = config.get("rank_query_limit", 1)
 
         # 启动时异步下载图片
         asyncio.get_event_loop().create_task(download_image_if_needed())
