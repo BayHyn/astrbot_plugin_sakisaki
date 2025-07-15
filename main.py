@@ -120,7 +120,6 @@ class SakiSaki(Star):
             from astrbot.core.platform.sources.aiocqhttp.aiocqhttp_message_event import AiocqhttpMessageEvent
             if isinstance(event, AiocqhttpMessageEvent):
                 client = event.bot
-                # 使用您提供的 Request 类来构建请求
                 request_payload = Request(message_id=message_id)
                 await client.api.call_action('delete_msg', **vars(request_payload))
                 logger.info(f"成功撤回消息 {message_id}.")
@@ -129,9 +128,9 @@ class SakiSaki(Star):
         except Exception as e:
             logger.error(f"撤回消息 {message_id} 失败: {e}")
 
-    async def send_and_retract(self, event: AstrMessageEvent, chain: List[BaseMessageComponent]):
+    async def send_and_retract(self, event: AstrMessageEvent, result: MessageEventResult):
         try:
-            sent_info = await event.send(chain)
+            sent_info = await event.send(result.chain)
             if sent_info and isinstance(sent_info, dict) and sent_info.get("data", {}).get("message_id"):
                 message_id = sent_info["data"]["message_id"]
                 asyncio.create_task(self.retract_task(event, message_id))
@@ -176,7 +175,7 @@ class SakiSaki(Star):
             if elapsed_time < GAME_COOLDOWN_TIME:
                 if trigger_count >= self.game_trigger_limit:
                     msg = f"⏳ 你的短时追击次数已达上限，请等待 {round(GAME_COOLDOWN_TIME - elapsed_time)} 秒后再尝试"
-                    await self.send_and_retract(event, event.plain_result(msg).chain)
+                    await self.send_and_retract(event, event.plain_result(msg))
                     return
                 else:
                     USER_COOLDOWN[sender_id] = (last_trigger_time, trigger_count + 1)
@@ -194,16 +193,16 @@ class SakiSaki(Star):
             save_data(data)
 
             msg = f"🎉 你是追上本祥的第 {data['play_count']} 位三角初音！根据统计你香草小祥 {data['players'][sender_id]['count']} 次！"
-            await self.send_and_retract(event, event.plain_result(msg).chain)
+            await self.send_and_retract(event, event.plain_result(msg))
 
             if os.path.exists(IMAGE_DEST_PATH):
-                await self.send_and_retract(event, event.image_result(os.path.abspath(IMAGE_DEST_PATH)).chain)
+                await self.send_and_retract(event, event.image_result(os.path.abspath(IMAGE_DEST_PATH)))
             else:
-                await self.send_and_retract(event, event.plain_result("⚠️ 图片未找到，可能下载失败。").chain)
+                await self.send_and_retract(event, event.plain_result("⚠️ 图片未找到，可能下载失败。"))
         else:
             fail_prob = round(random.uniform(self.success_prob, self.max_fail_prob) * 100, 2)
             msg = f"😢 你在概率为 {fail_prob}% 时让小祥逃掉了，正在重新追击……"
-            await self.send_and_retract(event, event.plain_result(msg).chain)
+            await self.send_and_retract(event, event.plain_result(msg))
 
     @filter.command("saki排行")
     async def show_rank(self, event: AstrMessageEvent):
@@ -218,7 +217,7 @@ class SakiSaki(Star):
             if elapsed_time < RANK_COOLDOWN_TIME:
                 if rank_query_count >= self.rank_query_limit:
                     msg = "⏳ 你60s内已经查询过排行榜，请稍后再来查询吧！"
-                    await self.send_and_retract(event, event.plain_result(msg).chain)
+                    await self.send_and_retract(event, event.plain_result(msg))
                     return
                 else:
                     RANK_QUERIES[sender_id] = rank_query_count + 1
@@ -232,19 +231,19 @@ class SakiSaki(Star):
         data = load_data()
         players = data.get("players", {})
         if not players:
-            await self.send_and_retract(event, event.plain_result("暂无玩家记录~").chain)
+            await self.send_and_retract(event, event.plain_result("暂无玩家记录~"))
             return
 
         ranking = sorted(players.items(), key=lambda x: x[1]["count"], reverse=True)
         msg = "🏆 香草小祥排行榜：\n"
         for i, (uid, info) in enumerate(ranking[:10], 1):
             msg += f"{i}. {info['name']} - {info['count']} 次\n"
-        await self.send_and_retract(event, event.plain_result(msg).chain)
+        await self.send_and_retract(event, event.plain_result(msg))
 
     @filter.command("saki清除排行")
     async def clear_rank(self, event: AstrMessageEvent):
         if not event.is_admin():
-            await self.send_and_retract(event, event.plain_result("⚠️ 只有管理员可以清除排行榜！").chain)
+            await self.send_and_retract(event, event.plain_result("⚠️ 只有管理员可以清除排行榜！"))
             return
 
         data = load_data()
@@ -252,7 +251,7 @@ class SakiSaki(Star):
         data["players"] = {}
         save_data(data)
 
-        await self.send_and_retract(event, event.plain_result("✅ 排行榜已成功清除！").chain)
+        await self.send_and_retract(event, event.plain_result("✅ 排行榜已成功清除！"))
 
     async def terminate(self):
         logger.info("插件 astrbot_plugin_sakisaki 被终止。")
