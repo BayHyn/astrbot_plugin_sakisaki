@@ -110,7 +110,7 @@ class SakiSaki(Star):
     async def retract_task(self, event: AstrMessageEvent, message_id: int):
         await asyncio.sleep(5)
         try:
-            url = "http://127.0.0.1:5700/delete_msg"  # 请根据你的 CQHTTP 服务地址和端口修改
+            url = "http://0.0.0.0:5700/delete_msg"  # 地址已改为 0.0.0.0
             payload = json.dumps({
                 "message_id": message_id
             })
