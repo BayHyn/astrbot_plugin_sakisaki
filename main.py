@@ -130,19 +130,25 @@ class SakiSaki(Star):
         try:
             sent_info = await event.send(chain)
             message_id = None
-            # CQHTTP 可能返回 {"status": "ok", "retcode": 0, "data": {"message_id": 123}}
+            # CQHTTP 可能返回 {"status": "ok", "retcode": 0, "data": {"message_id": 123}} 或 {"status": "ok", "retcode": 0, "data": None}
             if sent_info and isinstance(sent_info, dict):
                 data = sent_info.get("data")
-                # 兼容 data 为 int（直接 message_id），dict（包含 message_id），None
                 if isinstance(data, int):
                     message_id = data if data > 0 else None
                 elif isinstance(data, dict):
                     message_id = data.get("message_id")
+                    if isinstance(message_id, str):
+                        try:
+                            message_id = int(message_id)
+                        except Exception:
+                            message_id = None
                     if not message_id or message_id == 0:
                         message_id = None
+                # 如果 data 为 None，则 message_id 也为 None
             if message_id is not None:
                 asyncio.create_task(self.retract_task(event, message_id))
             else:
+                # 响应结构为 {"status": "ok", "retcode": 0, "data": None} 时不会撤回
                 logger.warning(f"无法从发送响应中获取 message_id: {sent_info}")
         except Exception as e:
             logger.error(f"发送并计划撤回消息失败: {e}")
