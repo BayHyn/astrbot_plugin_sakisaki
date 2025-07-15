@@ -129,10 +129,12 @@ class SakiSaki(Star):
             # CQHTTP 可能返回 {"status": "ok", "retcode": 0, "data": {"message_id": 123}}
             if sent_info and isinstance(sent_info, dict):
                 data = sent_info.get("data")
-                if isinstance(data, dict):
+                # 兼容 data 为 int（直接 message_id），dict（包含 message_id），None
+                if isinstance(data, int):
+                    message_id = data if data > 0 else None
+                elif isinstance(data, dict):
                     message_id = data.get("message_id")
-                    # 过滤掉 message_id 为 None 或 0 的情况
-                    if not message_id:
+                    if not message_id or message_id == 0:
                         message_id = None
             if message_id is not None:
                 asyncio.create_task(self.retract_task(event, message_id))
