@@ -29,8 +29,12 @@ def load_data():
     # 确保 DATA_PATH 已经被初始化
     if not DATA_PATH or not os.path.exists(DATA_PATH):
         return {"play_count": 0, "players": {}}
-    with open(DATA_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(DATA_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, FileNotFoundError):
+        return {"play_count": 0, "players": {}}
+
 
 # 保存数据
 def save_data(data):
@@ -44,7 +48,11 @@ def save_data(data):
 
 async def download_image_if_needed():
     # 确保 IMAGE_DEST_PATH 已经被初始化
-    if not IMAGE_DEST_PATH or not os.path.exists(os.path.dirname(IMAGE_DEST_PATH)):
+    if not IMAGE_DEST_PATH:
+        logger.error("IMAGE_DEST_PATH not initialized, cannot download image.")
+        return
+        
+    if not os.path.exists(os.path.dirname(IMAGE_DEST_PATH)):
         os.makedirs(os.path.dirname(IMAGE_DEST_PATH), exist_ok=True)
     
     if not os.path.exists(IMAGE_DEST_PATH):
@@ -76,13 +84,21 @@ class SakiSaki(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         
-        # 在 __init__ 方法中初始化路径
         global DATA_PATH, IMAGE_DEST_PATH
-        # 使用 StarTools 的一个更安全的方法来获取插件目录
-        plugin_dir = StarTools.get_root_dir_by_name("astrbot_plugin_sakisaki")
-        data_dir = os.path.join(plugin_dir, "data")
-        DATA_PATH = os.path.join(data_dir, "sakisaki_data.json")
-        IMAGE_DEST_PATH = os.path.join(data_dir, "sjp.jpg")
+        # 修正：必须在 __init__ 中调用 get_data_dir() 来确保插件元数据已加载
+        # 且方法名是 get_data_dir 而非 get_root_dir_by_name
+        try:
+            data_dir = StarTools.get_data_dir()
+            DATA_PATH = os.path.join(data_dir, "sakisaki_data.json")
+            IMAGE_DEST_PATH = os.path.join(data_dir, "sjp.jpg")
+        except Exception as e:
+            logger.error(f"初始化插件路径时出错: {e}")
+            # 提供一个备用路径，以防万一
+            if not DATA_PATH:
+                DATA_PATH = os.path.join("data", "sakisaki_data.json")
+            if not IMAGE_DEST_PATH:
+                IMAGE_DEST_PATH = os.path.join("data", "sjp.jpg")
+
 
         self.config = config
         self.success_prob = clamp(config.get("success_prob", 0.5), 0, 1)
@@ -119,7 +135,11 @@ class SakiSaki(Star):
             logger.error(f"发送并计划撤回消息失败: {e}")
 
     @filter.event_message_type(filter.EventMessageType.ALL)
-    async def handle_saki_trigger(self, event: AstrMessageEvent):
+    async def on_message(self, event: AstrMessageEvent):
+        # 修正：将函数名改回 on_message 并确保 event 是 AstrMessageEvent 类型
+        if not isinstance(event, AstrMessageEvent):
+            return
+
         global LAST_TRIGGER_TIME
         current_time = time.time()
         text = event.message_str.lower()
@@ -131,7 +151,7 @@ class SakiSaki(Star):
             return
 
         plugin_responses = [
-            "🎉 你是追上本祥的第", "😢 你在概率为", "🏆 香草小祥排行榜：",
+            "� 你是追上本祥的第", "😢 你在概率为", "🏆 香草小祥排行榜：",
             "✅ 排行榜已成功清除！", "暂无玩家记录~", "⚠️ 图片未找到，可能下载失败。",
             "⏳ 你的短时追击次数已达上限，请等待", "⏳ 你60s内已经查询过排行榜，请稍后再来查询吧！",
         ]
