@@ -119,7 +119,7 @@ class SakiSaki(Star):
             logger.error(f"发送并计划撤回消息失败: {e}")
 
     @filter.event_message_type(filter.EventMessageType.ALL)
-    async def on_message(self, event: AstrMessageEvent):
+    async def handle_saki_trigger(self, event: AstrMessageEvent):
         global LAST_TRIGGER_TIME
         current_time = time.time()
         text = event.message_str.lower()
