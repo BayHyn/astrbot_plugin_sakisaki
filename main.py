@@ -112,19 +112,10 @@ class SakiSaki(Star):
 
     async def retract_task(self, event: AstrMessageEvent, message_id: int):
         await asyncio.sleep(5)
+        # aiocqhttp 推荐直接用 event.bot.api.call_action
         try:
-            conn = http.client.HTTPConnection(self.cqhttp_host, self.cqhttp_port)
-            payload = json.dumps({
-                "message_id": message_id
-            })
-            headers = {
-                'Content-Type': 'application/json'
-            }
-            conn.request("POST", "/delete_msg", payload, headers)
-            res = conn.getresponse()
-            data = res.read()
-            logger.info(f"撤回消息响应: {data.decode('utf-8')}")
-            conn.close()
+            await event.bot.api.call_action('delete_msg', message_id=message_id)
+            logger.info(f"撤回消息 {message_id} 已通过 aiocqhttp 完成。")
         except Exception as e:
             logger.error(f"撤回消息 {message_id} 失败: {e}")
 
@@ -262,6 +253,15 @@ class SakiSaki(Star):
             await self.send_and_retract(event, event.plain_result("⚠️ 只有管理员可以清除排行榜！"))
             return
 
+        data = load_data()
+        data["play_count"] = 0
+        data["players"] = {}
+        save_data(data)
+
+        await self.send_and_retract(event, event.plain_result("✅ 排行榜已成功清除！"))
+
+    async def terminate(self):
+        logger.info("插件 astrbot_plugin_sakisaki 被终止。")
         data = load_data()
         data["play_count"] = 0
         data["players"] = {}
