@@ -86,7 +86,6 @@ def clamp(value, min_value=0, max_value=1):
 class SakiSaki(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
-        
         global DATA_PATH, IMAGE_DEST_PATH
         try:
             data_dir = StarTools.get_data_dir()
@@ -99,19 +98,22 @@ class SakiSaki(Star):
             if not IMAGE_DEST_PATH:
                 IMAGE_DEST_PATH = os.path.join("data", "sjp.jpg")
 
-
         self.config = config
         self.success_prob = clamp(config.get("success_prob", 0.5), 0, 1)
         self.max_fail_prob = clamp(config.get("max_fail_prob", 0.95), 0, 1)
         self.game_trigger_limit = config.get("game_trigger_limit", 3)
         self.rank_query_limit = config.get("rank_query_limit", 1)
 
+        # 新增：从配置获取CQHTTP地址和端口
+        self.cqhttp_host = config.get("cqhttp_host", "127.0.0.1")
+        self.cqhttp_port = config.get("cqhttp_port", 5700)
+
         asyncio.get_event_loop().create_task(download_image_if_needed())
 
     async def retract_task(self, event: AstrMessageEvent, message_id: int):
         await asyncio.sleep(5)
         try:
-            conn = http.client.HTTPConnection("0.0.0.0", 5700)  # 地址和端口请根据你的 CQHTTP 服务实际情况修改
+            conn = http.client.HTTPConnection(self.cqhttp_host, self.cqhttp_port)
             payload = json.dumps({
                 "message_id": message_id
             })

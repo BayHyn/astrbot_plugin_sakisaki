@@ -18,5 +18,15 @@
         "description": "冷却时间（秒）",
         "type": "int",
         "default": 1
+    },
+    "cqhttp_host": {
+        "description": "CQHTTP服务地址",
+        "type": "string",
+        "default": "127.0.0.1"
+    },
+    "cqhttp_port": {
+        "description": "CQHTTP服务端口",
+        "type": "int",
+        "default": 5700
     }
 }
