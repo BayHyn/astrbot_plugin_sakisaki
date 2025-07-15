@@ -10,6 +10,7 @@ from astrbot.api.star import Context, Star, register
 from astrbot.api.message_components import Plain, BaseMessageComponent, Image
 from astrbot.api import logger, AstrBotConfig
 from astrbot.api.star import StarTools
+from astrbot.core.message.message_event_result import MessageChain
 
 # 将这些变量定义在模块顶层，但暂时不赋值
 DATA_PATH = None
@@ -128,9 +129,12 @@ class SakiSaki(Star):
         except Exception as e:
             logger.error(f"撤回消息 {message_id} 失败: {e}")
 
-    async def send_and_retract(self, event: AstrMessageEvent, chain: List[BaseMessageComponent]):
+    async def send_and_retract(self, event: AstrMessageEvent, components: List[BaseMessageComponent]):
         try:
-            sent_info = await event.send(chain)
+            # 修正: event.send() 期望接收一个 MessageChain 对象
+            message_to_send = MessageChain(components)
+            sent_info = await event.send(message_to_send)
+            
             if sent_info and isinstance(sent_info, dict) and sent_info.get("data", {}).get("message_id"):
                 message_id = sent_info["data"]["message_id"]
                 asyncio.create_task(self.retract_task(event, message_id))
