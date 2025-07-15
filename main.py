@@ -76,11 +76,6 @@ class SakiSaki(Star):
         # 启动时异步下载图片
         asyncio.get_event_loop().create_task(download_image_if_needed())
 
-    async def recall_after(self, event, msg, delay=5):
-        msg_id = await event.send_result(msg)
-        await asyncio.sleep(delay)
-        await event.recall_message(msg_id)
-
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def on_message(self, event: AstrMessageEvent):
         global LAST_TRIGGER_TIME
@@ -112,15 +107,13 @@ class SakiSaki(Star):
         # 优先处理清除排行命令，避免触发排行关键词
         if "saki清除排行" in text:
             async for msg in self.clear_rank(event):
-                # yield msg
-                asyncio.create_task(self.recall_after(event, msg))
+                yield msg
             return
 
         if "saki" in text or "小祥" in text:
             if "排行" in text:
                 async for msg in self.show_rank(event):
-                    # yield msg
-                    asyncio.create_task(self.recall_after(event, msg))
+                    yield msg
                 return  # 确保只发送一次排行数据
 
             sender_id = event.get_sender_id()
@@ -150,27 +143,20 @@ class SakiSaki(Star):
                 data["players"][sender_id]["count"] += 1
                 save_data(data)
 
-                # yield event.plain_result(
-                #     f"🎉 你是追上本祥的第 {data['play_count']} 位三角初音！根据统计你香草小祥 {data['players'][sender_id]['count']} 次！"
-                # )
-                msg = event.plain_result(
+                yield event.plain_result(
                     f"🎉 你是追上本祥的第 {data['play_count']} 位三角初音！根据统计你香草小祥 {data['players'][sender_id]['count']} 次！"
                 )
-                asyncio.create_task(self.recall_after(event, msg))
 
                 # 发送图片
                 if os.path.exists(IMAGE_DEST_PATH):
-                    img_msg = event.image_result(os.path.abspath(IMAGE_DEST_PATH))
-                    asyncio.create_task(self.recall_after(event, img_msg))
+                    yield event.image_result(os.path.abspath(IMAGE_DEST_PATH))
                 else:
-                    warn_msg = event.plain_result("⚠️ 图片未找到，可能下载失败。")
-                    asyncio.create_task(self.recall_after(event, warn_msg))
+                    yield event.plain_result("⚠️ 图片未找到，可能下载失败。")
             else:
                 fail_prob = round(random.uniform(self.success_prob, self.max_fail_prob) * 100, 2)
-                fail_msg = event.plain_result(
+                yield event.plain_result(
                     f"😢 你在概率为 {fail_prob}% 时让小祥逃掉了，正在重新追击……"
                 )
-                asyncio.create_task(self.recall_after(event, fail_msg))
 
     @filter.command("saki排行")
     async def show_rank(self, event: AstrMessageEvent):
@@ -200,16 +186,14 @@ class SakiSaki(Star):
         data = load_data()
         players = data.get("players", {})
         if not players:
-            msg = event.plain_result("暂无玩家记录~")
-            asyncio.create_task(self.recall_after(event, msg))
+            yield event.plain_result("暂无玩家记录~")
             return
 
         ranking = sorted(players.items(), key=lambda x: x[1]["count"], reverse=True)
         msg = "🏆 香草小祥排行榜：\n"
         for i, (uid, info) in enumerate(ranking[:10], 1):
             msg += f"{i}. {info['name']} - {info['count']} 次\n"
-        result_msg = event.plain_result(msg)
-        asyncio.create_task(self.recall_after(event, result_msg))
+        yield event.plain_result(msg)
 
     @filter.command("saki清除排行")
     async def clear_rank(self, event: AstrMessageEvent):
@@ -224,8 +208,7 @@ class SakiSaki(Star):
         data["players"] = {}
         save_data(data)
 
-        result_msg = event.plain_result("✅ 排行榜已成功清除！")
-        asyncio.create_task(self.recall_after(event, result_msg))
+        yield event.plain_result("✅ 排行榜已成功清除！")
 
     async def terminate(self):
         logger.info("插件 astrbot_plugin_sakisaki 被终止。")
