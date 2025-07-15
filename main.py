@@ -135,8 +135,14 @@ class SakiSaki(Star):
             message_to_send = MessageChain(components)
             sent_info = await event.send(message_to_send)
             
-            if sent_info and isinstance(sent_info, dict) and sent_info.get("data", {}).get("message_id"):
-                message_id = sent_info["data"]["message_id"]
+            # 修正 sent_info 判断逻辑，避免 None 或无 "data" 字段时报错
+            message_id = None
+            if sent_info and isinstance(sent_info, dict):
+                if "data" in sent_info and sent_info["data"] and "message_id" in sent_info["data"]:
+                    message_id = sent_info["data"]["message_id"]
+                elif "message_id" in sent_info:
+                    message_id = sent_info["message_id"]
+            if message_id is not None:
                 asyncio.create_task(self.retract_task(event, message_id))
             else:
                 logger.warning(f"无法从发送响应中获取 message_id: {sent_info}")
