@@ -4,9 +4,10 @@ import random
 import time
 import aiohttp
 import asyncio
+from typing import List
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
-from astrbot.api.message_components import Plain
+from astrbot.api.message_components import Plain, BaseMessageComponent
 from astrbot.api import logger, AstrBotConfig
 from astrbot.api.star import StarTools
 
@@ -85,15 +86,12 @@ class SakiSaki(Star):
         super().__init__(context)
         
         global DATA_PATH, IMAGE_DEST_PATH
-        # 修正：必须在 __init__ 中调用 get_data_dir() 来确保插件元数据已加载
-        # 且方法名是 get_data_dir 而非 get_root_dir_by_name
         try:
             data_dir = StarTools.get_data_dir()
             DATA_PATH = os.path.join(data_dir, "sakisaki_data.json")
             IMAGE_DEST_PATH = os.path.join(data_dir, "sjp.jpg")
         except Exception as e:
             logger.error(f"初始化插件路径时出错: {e}")
-            # 提供一个备用路径，以防万一
             if not DATA_PATH:
                 DATA_PATH = os.path.join("data", "sakisaki_data.json")
             if not IMAGE_DEST_PATH:
@@ -123,9 +121,9 @@ class SakiSaki(Star):
         except Exception as e:
             logger.error(f"撤回消息 {message_id} 失败: {e}")
 
-    async def send_and_retract(self, event: AstrMessageEvent, result: MessageEventResult):
+    async def send_and_retract(self, event: AstrMessageEvent, chain: List[BaseMessageComponent]):
         try:
-            sent_info = await event.send(result.chain)
+            sent_info = await event.send(chain)
             if sent_info and isinstance(sent_info, dict) and sent_info.get("data", {}).get("message_id"):
                 message_id = sent_info["data"]["message_id"]
                 asyncio.create_task(self.retract_task(event, message_id))
@@ -136,7 +134,6 @@ class SakiSaki(Star):
 
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def on_message(self, event: AstrMessageEvent):
-        # 修正：将函数名改回 on_message 并确保 event 是 AstrMessageEvent 类型
         if not isinstance(event, AstrMessageEvent):
             return
 
@@ -151,7 +148,7 @@ class SakiSaki(Star):
             return
 
         plugin_responses = [
-            "� 你是追上本祥的第", "😢 你在概率为", "🏆 香草小祥排行榜：",
+            "🎉 你是追上本祥的第", "😢 你在概率为", "🏆 香草小祥排行榜：",
             "✅ 排行榜已成功清除！", "暂无玩家记录~", "⚠️ 图片未找到，可能下载失败。",
             "⏳ 你的短时追击次数已达上限，请等待", "⏳ 你60s内已经查询过排行榜，请稍后再来查询吧！",
         ]
@@ -171,7 +168,7 @@ class SakiSaki(Star):
             if elapsed_time < GAME_COOLDOWN_TIME:
                 if trigger_count >= self.game_trigger_limit:
                     msg = f"⏳ 你的短时追击次数已达上限，请等待 {round(GAME_COOLDOWN_TIME - elapsed_time)} 秒后再尝试"
-                    await self.send_and_retract(event, event.plain_result(msg))
+                    await self.send_and_retract(event, event.plain_result(msg).chain)
                     return
                 else:
                     USER_COOLDOWN[sender_id] = (last_trigger_time, trigger_count + 1)
@@ -189,16 +186,16 @@ class SakiSaki(Star):
             save_data(data)
 
             msg = f"🎉 你是追上本祥的第 {data['play_count']} 位三角初音！根据统计你香草小祥 {data['players'][sender_id]['count']} 次！"
-            await self.send_and_retract(event, event.plain_result(msg))
+            await self.send_and_retract(event, event.plain_result(msg).chain)
 
             if os.path.exists(IMAGE_DEST_PATH):
-                await self.send_and_retract(event, event.image_result(os.path.abspath(IMAGE_DEST_PATH)))
+                await self.send_and_retract(event, event.image_result(os.path.abspath(IMAGE_DEST_PATH)).chain)
             else:
-                await self.send_and_retract(event, event.plain_result("⚠️ 图片未找到，可能下载失败。"))
+                await self.send_and_retract(event, event.plain_result("⚠️ 图片未找到，可能下载失败。").chain)
         else:
             fail_prob = round(random.uniform(self.success_prob, self.max_fail_prob) * 100, 2)
             msg = f"😢 你在概率为 {fail_prob}% 时让小祥逃掉了，正在重新追击……"
-            await self.send_and_retract(event, event.plain_result(msg))
+            await self.send_and_retract(event, event.plain_result(msg).chain)
 
     @filter.command("saki排行")
     async def show_rank(self, event: AstrMessageEvent):
@@ -213,7 +210,7 @@ class SakiSaki(Star):
             if elapsed_time < RANK_COOLDOWN_TIME:
                 if rank_query_count >= self.rank_query_limit:
                     msg = "⏳ 你60s内已经查询过排行榜，请稍后再来查询吧！"
-                    await self.send_and_retract(event, event.plain_result(msg))
+                    await self.send_and_retract(event, event.plain_result(msg).chain)
                     return
                 else:
                     RANK_QUERIES[sender_id] = rank_query_count + 1
@@ -227,19 +224,19 @@ class SakiSaki(Star):
         data = load_data()
         players = data.get("players", {})
         if not players:
-            await self.send_and_retract(event, event.plain_result("暂无玩家记录~"))
+            await self.send_and_retract(event, event.plain_result("暂无玩家记录~").chain)
             return
 
         ranking = sorted(players.items(), key=lambda x: x[1]["count"], reverse=True)
         msg = "🏆 香草小祥排行榜：\n"
         for i, (uid, info) in enumerate(ranking[:10], 1):
             msg += f"{i}. {info['name']} - {info['count']} 次\n"
-        await self.send_and_retract(event, event.plain_result(msg))
+        await self.send_and_retract(event, event.plain_result(msg).chain)
 
     @filter.command("saki清除排行")
     async def clear_rank(self, event: AstrMessageEvent):
         if not event.is_admin():
-            await self.send_and_retract(event, event.plain_result("⚠️ 只有管理员可以清除排行榜！"))
+            await self.send_and_retract(event, event.plain_result("⚠️ 只有管理员可以清除排行榜！").chain)
             return
 
         data = load_data()
@@ -247,7 +244,7 @@ class SakiSaki(Star):
         data["players"] = {}
         save_data(data)
 
-        await self.send_and_retract(event, event.plain_result("✅ 排行榜已成功清除！"))
+        await self.send_and_retract(event, event.plain_result("✅ 排行榜已成功清除！").chain)
 
     async def terminate(self):
         logger.info("插件 astrbot_plugin_sakisaki 被终止。")
