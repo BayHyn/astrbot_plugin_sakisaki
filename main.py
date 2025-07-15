@@ -4,6 +4,7 @@ import random
 import time
 import aiohttp
 import asyncio
+import base64
 from typing import List, Union
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
@@ -205,9 +206,14 @@ class SakiSaki(Star):
             await self.send_and_retract(event, [Plain(msg)])
 
             if os.path.exists(IMAGE_DEST_PATH):
-                await self.send_and_retract(
-                    event, [Image.fromFileSystem(os.path.abspath(IMAGE_DEST_PATH))]
-                )
+                try:
+                    with open(IMAGE_DEST_PATH, "rb") as img_file:
+                        encoded_string = base64.b64encode(img_file.read()).decode('utf-8')
+                    image_uri = f"base64://{encoded_string}"
+                    await self.send_and_retract(event, [Image(file=image_uri)])
+                except Exception as e:
+                    logger.error(f"读取或编码图片失败: {e}")
+                    await self.send_and_retract(event, [Plain("⚠️ 图片加载失败。")])
             else:
                 await self.send_and_retract(event, [Plain("⚠️ 图片未找到，可能下载失败。")])
         else:
