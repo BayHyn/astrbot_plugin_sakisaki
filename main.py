@@ -124,8 +124,14 @@ class SakiSaki(Star):
     async def send_and_retract(self, event: AstrMessageEvent, chain: List[BaseMessageComponent]):
         try:
             sent_info = await event.send(chain)
-            if sent_info and isinstance(sent_info, dict) and sent_info.get("data", {}).get("message_id"):
-                message_id = sent_info["data"]["message_id"]
+            # sent_info 可能为 None 或 dict
+            message_id = None
+            if sent_info and isinstance(sent_info, dict):
+                # 兼容 data 为 None 的情况
+                data = sent_info.get("data")
+                if isinstance(data, dict) and "message_id" in data:
+                    message_id = data["message_id"]
+            if message_id:
                 asyncio.create_task(self.retract_task(event, message_id))
             else:
                 logger.warning(f"无法从发送响应中获取 message_id: {sent_info}")
