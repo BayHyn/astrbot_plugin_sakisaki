@@ -6,7 +6,7 @@ import aiohttp
 import asyncio
 import requests
 import http.client
-from typing import List
+from typing import List, Union
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api.message_components import Plain, BaseMessageComponent
@@ -75,6 +75,12 @@ LAST_TRIGGER_TIME = 0
 
 def clamp(value, min_value=0, max_value=1):
     return max(min(value, max_value), min_value)
+
+class ApifoxModel:
+    message_id: Union[float, str]
+
+    def __init__(self, message_id: Union[float, str]) -> None:
+        self.message_id = message_id
 
 @register(
     "astrbot_plugin_sakisaki",
