@@ -4,6 +4,7 @@ import random
 import time
 import aiohttp
 import asyncio
+import requests
 from typing import List
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
@@ -108,16 +109,16 @@ class SakiSaki(Star):
 
     async def retract_task(self, event: AstrMessageEvent, message_id: int):
         await asyncio.sleep(5)
-        if event.get_platform_name() != "aiocqhttp":
-            return
         try:
-            from astrbot.core.platform.sources.aiocqhttp.aiocqhttp_message_event import AiocqhttpMessageEvent
-            if isinstance(event, AiocqhttpMessageEvent):
-                client = event.bot
-                await client.api.call_action('delete_msg', message_id=message_id)
-                logger.info(f"成功撤回消息 {message_id}.")
-            else:
-                logger.warning("事件类型不是 AiocqhttpMessageEvent，无法撤回消息。")
+            url = "http://127.0.0.1:5700/delete_msg"  # 请根据你的 CQHTTP 服务地址和端口修改
+            payload = json.dumps({
+                "message_id": message_id
+            })
+            headers = {
+                'Content-Type': 'application/json'
+            }
+            response = requests.post(url, headers=headers, data=payload)
+            logger.info(f"撤回消息响应: {response.text}")
         except Exception as e:
             logger.error(f"撤回消息 {message_id} 失败: {e}")
 
