@@ -80,6 +80,3 @@ https://raw.githubusercontent.com/oyxning/astrbot_plugin_sakisaki/refs/heads/mas
 * 群号：928985352       
 * 进群密码：神人desuwa
 
-
-=======
->>>>>>> 0576ae467e0358f820119f6e721e1097f0d7427b
