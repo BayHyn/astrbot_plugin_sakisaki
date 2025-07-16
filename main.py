@@ -209,7 +209,7 @@ class SakiSaki(Star):
             data["players"][sender_id]["count"] += 1
             save_data(data)
 
-            msg = f"� 你是追上本祥的第 {data['play_count']} 位三角初音！根据统计你香草小祥 {data['players'][sender_id]['count']} 次！"
+            msg = f"🎉 你是追上本祥的第 {data['play_count']} 位三角初音！根据统计你香草小祥 {data['players'][sender_id]['count']} 次！"
             
             should_retract_on_success = not self.dont_retract_on_success
             await self.send_and_retract(event, [Plain(msg)], retract=should_retract_on_success)
