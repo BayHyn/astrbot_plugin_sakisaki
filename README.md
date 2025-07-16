@@ -11,7 +11,7 @@
 - 📊 查询排行榜（含冷却机制）
   - 排行榜数据会记录在以下文件中：
     ```
-    data/sakisaki_data.json
+    /data/plugin_data/astrbot_plugin_sakisaki/sakisaki_data.json
     ```
   - 支持清除排行榜功能（仅限管理员）
 
@@ -40,7 +40,7 @@ https://raw.githubusercontent.com/oyxning/astrbot_plugin_sakisaki/refs/heads/mas
 保存到路径：
 
 ```
-data/sjp.jpg
+/data/plugin_data/astrbot_plugin_sakisaki/sjp.jpg
 ```
 
 ---
@@ -73,3 +73,10 @@ data/sjp.jpg
 ## 📜 许可证
 
 本插件遵循 [MIT 许可证](https://opensource.org/license/mit/)，欢迎自由使用和修改。
+
+## 💡 另：插件反馈群
+
+由于作者持续的那么一个懒，平常不会及时的看issues，所以开了个QQ反馈群方便用户及时的拷打作者。
+* 群号：928985352       
+* 进群密码：神人desuwa
+

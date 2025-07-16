@@ -81,7 +81,7 @@ def clamp(value, min_value=0, max_value=1):
     "astrbot_plugin_sakisaki",
     "LumineStory",
     "香草小祥小游戏插件",
-    "1.5.0",
+    "1.5.1",
     "https://github.com/oyxning/astrbot_plugin_sakisaki",
 )
 class SakiSaki(Star):
@@ -90,7 +90,7 @@ class SakiSaki(Star):
 
         global DATA_PATH, IMAGE_DEST_PATH
         try:
-            data_dir = StarTools.get_data_dir()
+            data_dir = StarTools.get_data_dir("astrbot_plugin_sakisaki")
             DATA_PATH = os.path.join(data_dir, "sakisaki_data.json")
             IMAGE_DEST_PATH = os.path.join(data_dir, "sjp.jpg")
         except Exception as e:
@@ -106,10 +106,16 @@ class SakiSaki(Star):
         self.game_trigger_limit = config.get("game_trigger_limit", 3)
         self.rank_query_limit = config.get("rank_query_limit", 1)
 
+        retract_config = self.config.get("retract_config", {})
+        self.retract_delay = retract_config.get("retract_delay", 10)
+        self.dont_retract_on_success = retract_config.get("dont_retract_on_success", True)
+
         asyncio.get_event_loop().create_task(download_image_if_needed())
 
     async def retract_task(self, event: AiocqhttpMessageEvent, message_id: int):
-        await asyncio.sleep(5)
+        if self.retract_delay <= 0:
+            return
+        await asyncio.sleep(self.retract_delay)
         try:
             client = event.bot
             await client.api.call_action("delete_msg", message_id=message_id)
@@ -118,7 +124,7 @@ class SakiSaki(Star):
             logger.error(f"撤回消息 {message_id} 失败: {e}")
 
     async def send_and_retract(
-        self, event: AiocqhttpMessageEvent, components: List[BaseMessageComponent]
+        self, event: AiocqhttpMessageEvent, components: List[BaseMessageComponent], retract: bool = True
     ):
         try:
             client = event.bot
@@ -135,8 +141,9 @@ class SakiSaki(Star):
                 )
 
             if sent_info and isinstance(sent_info, dict) and sent_info.get("message_id"):
-                message_id = sent_info["message_id"]
-                asyncio.create_task(self.retract_task(event, message_id))
+                if retract:
+                    message_id = sent_info["message_id"]
+                    asyncio.create_task(self.retract_task(event, message_id))
             else:
                 logger.warning(f"无法从发送响应中获取 message_id: {sent_info}")
         except Exception as e:
@@ -202,15 +209,17 @@ class SakiSaki(Star):
             data["players"][sender_id]["count"] += 1
             save_data(data)
 
-            msg = f"🎉 你是追上本祥的第 {data['play_count']} 位三角初音！根据统计你香草小祥 {data['players'][sender_id]['count']} 次！"
-            await self.send_and_retract(event, [Plain(msg)])
+            msg = f"� 你是追上本祥的第 {data['play_count']} 位三角初音！根据统计你香草小祥 {data['players'][sender_id]['count']} 次！"
+            
+            should_retract_on_success = not self.dont_retract_on_success
+            await self.send_and_retract(event, [Plain(msg)], retract=should_retract_on_success)
 
             if os.path.exists(IMAGE_DEST_PATH):
                 try:
                     with open(IMAGE_DEST_PATH, "rb") as img_file:
                         encoded_string = base64.b64encode(img_file.read()).decode('utf-8')
                     image_uri = f"base64://{encoded_string}"
-                    await self.send_and_retract(event, [Image(file=image_uri)])
+                    await self.send_and_retract(event, [Image(file=image_uri)], retract=should_retract_on_success)
                 except Exception as e:
                     logger.error(f"读取或编码图片失败: {e}")
                     await self.send_and_retract(event, [Plain("⚠️ 图片加载失败。")])

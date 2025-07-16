@@ -1,22 +1,40 @@
 {
-    "success_prob":{
+    "success_prob": {
         "description": "成功概率",
         "type": "float",
         "default": 0.25
     },
-    "max_fail_prob":{
+    "max_fail_prob": {
         "description": "失败概率上限",
         "type": "float",
         "default": 0.95
     },
-    "trigger_limit":{
+    "game_trigger_limit": {
         "description": "游戏触发次数限制",
         "type": "int",
         "default": 3
     },
-    "rank_query_limit":{
-        "description": "冷却时间（秒）",
+    "rank_query_limit": {
+        "description": "排行榜查询次数限制",
         "type": "int",
         "default": 1
+    },
+    "retract_config": {
+        "description": "消息撤回配置",
+        "type": "object",
+        "items": {
+            "retract_delay": {
+                "description": "消息撤回延迟（秒）",
+                "type": "int",
+                "default": 10,
+                "hint": "设置为 0 则不自动撤回"
+            },
+            "dont_retract_on_success": {
+                "description": "追击成功时不撤回",
+                "type": "bool",
+                "default": true,
+                "hint": "勾选后，成功追上小祥的消息将不会被自动撤回"
+            }
+        }
     }
 }
