@@ -81,7 +81,7 @@ def clamp(value, min_value=0, max_value=1):
     "astrbot_plugin_sakisaki",
     "LumineStory",
     "香草小祥小游戏插件",
-    "1.5.1",
+    "1.6.0",
     "https://github.com/oyxning/astrbot_plugin_sakisaki",
 )
 class SakiSaki(Star):
@@ -131,13 +131,24 @@ class SakiSaki(Star):
             sent_info = None
             group_id = event.get_group_id()
 
+            # 确保消息组件能够正确序列化
+            message_content = []
+            for component in components:
+                if isinstance(component, Plain):
+                    message_content.append({'type': 'text', 'data': {'text': component.text}})
+                elif isinstance(component, Image):
+                    message_content.append({'type': 'image', 'data': {'file': component.file}})
+                else:
+                    # 对于其他类型的组件，尝试使用其原始形式
+                    message_content.append(component)
+
             if group_id:
                 sent_info = await client.send_group_msg(
-                    group_id=int(group_id), message=components
+                    group_id=int(group_id), message=message_content
                 )
             else:
                 sent_info = await client.send_private_msg(
-                    user_id=int(event.get_sender_id()), message=components
+                    user_id=int(event.get_sender_id()), message=message_content
                 )
 
             if sent_info and isinstance(sent_info, dict) and sent_info.get("message_id"):
